@@ -21,26 +21,28 @@ import org.w3c.dom.Document;
 
 public class CorreiosIntegration {
 
-    public static String trackObject(String codigo) throws IOException, SOAPException {
+    private static final String XML_ENVELOPE = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:res=\"http://resource.webservice.correios.com.br/\">"
+            + "   <soapenv:Header/>" + "   <soapenv:Body>" + "      <res:buscaEventos>" + "         <usuario>ECT</usuario>" + "         <senha>SRO</senha>"
+            + "         <tipo>L</tipo>" + "         <resultado>T</resultado>" + "         <lingua>101</lingua>" + "         <objetos> %s </objetos>"
+            + "      </res:buscaEventos>" + "   </soapenv:Body>" + "</soapenv:Envelope>";
 
-        String xml = "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:res=\"http://resource.webservice.correios.com.br/\">"
-                + "   <soapenv:Header/>" + "   <soapenv:Body>" + "      <res:buscaEventos>" + "         <usuario>ECT</usuario>" + "         <senha>SRO</senha>"
-                + "         <tipo>L</tipo>" + "         <resultado>T</resultado>" + "         <lingua>101</lingua>" + "         <objetos>" + codigo + "</objetos>"
-                + "      </res:buscaEventos>" + "   </soapenv:Body>" + "</soapenv:Envelope>";
+	public static String trackObject(String codigo) throws IOException, SOAPException {
+		String envelope = String.format(XML_ENVELOPE, codigo);
+        
         SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
         SOAPConnection soapConnection = soapConnectionFactory.createConnection();
-        // URL do Webservice
+        
         String url = "http://webservice.correios.com.br:80/service/rastro";
         MimeHeaders headers = new MimeHeaders();
         headers.addHeader("Content-Type", "text/xml");
 
         MessageFactory messageFactory = MessageFactory.newInstance();
 
-        SOAPMessage msg = messageFactory.createMessage(headers, (new ByteArrayInputStream(xml.getBytes())));
+        SOAPMessage msg = messageFactory.createMessage(headers, (new ByteArrayInputStream(envelope.getBytes())));
 
         SOAPMessage soapResponse = soapConnection.call(msg, url);
-        Document xmlRespostaARequisicao = soapResponse.getSOAPBody().getOwnerDocument();
-        return parseXmlToString(xmlRespostaARequisicao, 4);
+        Document responseXML = soapResponse.getSOAPBody().getOwnerDocument();
+        return parseXmlToString(responseXML, 4);
     }
 
     public static String parseXmlToString(Document xml, int espacosIdentacao) {
